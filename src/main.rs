@@ -11,6 +11,7 @@ mod files;
 mod git;
 mod output;
 mod projects;
+mod release;
 mod scan;
 
 use clap::{Parser, Subcommand};
@@ -43,6 +44,17 @@ enum Commands {
         #[arg(default_value = ".")]
         path: PathBuf,
     },
+
+    /// Check whether a project is ready for release
+    Release {
+        /// Project directory
+        #[arg(default_value = ".")]
+        path: PathBuf,
+
+        /// Treat warnings as release blockers
+        #[arg(long)]
+        strict: bool,
+    },
 }
 
 fn run() -> Result<(), String> {
@@ -52,6 +64,7 @@ fn run() -> Result<(), String> {
     match cli.command {
         Commands::Scan { path } => scan::run(&path),
         Commands::Git { path } => git::run(&path),
+        Commands::Release { path, strict } => release::run(&path, strict),
     }
 }
 
