@@ -7,7 +7,8 @@
 * ver. 0.1.0
 *************************************************/
 
-use crate::{files, ignore};
+use crate::files;
+use crate::projects;
 use crate::{
     git,
     output::{self, Summary},
@@ -53,21 +54,13 @@ pub fn run(path: &Path) -> Result<(), String> {
         summary.warn("License file missing");
     }
 
-    if has_file(&path, &["Cargo.toml"]) {
-        summary.ok("Rust project detected");
-    } else if has_file(&path, &["package.json"]) {
-        summary.ok("Node.js project detected");
-    } else if has_file(&path, &["CMakeLists.txt"]) {
-        summary.ok("CMake project detected");
-    } else {
-        output::info("No recognized project manifest in current directory");
-    }
-
     output::heading("Git checks");
     git::inspect(&path, &mut summary);
 
     files::inspect(&path, &mut summary);
-    ignore::inspect(&path, &mut summary);
+
+    // Detect Rust, .NET and Node.js projects in subdirectories.
+    projects::inspect(&path, &mut summary);
 
     summary.print();
 

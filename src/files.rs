@@ -48,15 +48,10 @@ fn git_root(path: &Path) -> Result<PathBuf, String> {
     Ok(PathBuf::from(root))
 }
 
-
 fn is_build_artifact(path: &Path) -> bool {
     let components: Vec<String> = path
         .components()
-        .map(|part| {
-            part.as_os_str()
-                .to_string_lossy()
-                .to_ascii_lowercase()
-        })
+        .map(|part| part.as_os_str().to_string_lossy().to_ascii_lowercase())
         .collect();
 
     if components.is_empty() {
@@ -64,22 +59,20 @@ fn is_build_artifact(path: &Path) -> bool {
     }
 
     // Rust: src/bin contains legitimate executable source files.
-    if components.windows(2).any(|pair| {
-        pair[0] == "src" && pair[1] == "bin"
-    }) {
+    if components
+        .windows(2)
+        .any(|pair| pair[0] == "src" && pair[1] == "bin")
+    {
         return false;
     }
 
     // Generated directories that should not normally be tracked.
-    const BUILD_DIRS: &[&str] = &[
-        "target",
-        "node_modules",
-        "__pycache__",
-        ".next",
-        ".gradle",
-    ];
+    const BUILD_DIRS: &[&str] = &["target", "node_modules", "__pycache__", ".next", ".gradle"];
 
-    if components.iter().any(|part| BUILD_DIRS.contains(&part.as_str())) {
+    if components
+        .iter()
+        .any(|part| BUILD_DIRS.contains(&part.as_str()))
+    {
         return true;
     }
 
@@ -93,7 +86,6 @@ fn is_build_artifact(path: &Path) -> bool {
     // classifying it as an error without further context.
     false
 }
-
 
 fn human_size(bytes: u64) -> String {
     if bytes >= 1024 * 1024 {

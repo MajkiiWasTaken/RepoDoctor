@@ -9,8 +9,8 @@
 
 mod files;
 mod git;
-mod ignore;
 mod output;
+mod projects;
 mod scan;
 
 use clap::{Parser, Subcommand};
