@@ -7,6 +7,7 @@
 * ver. 0.1.0
 *************************************************/
 
+use crate::{files, ignore};
 use crate::{
     git,
     output::{self, Summary},
@@ -28,9 +29,7 @@ pub fn run(path: &Path) -> Result<(), String> {
 
     let display_path = path.to_string_lossy();
 
-    let display_path = display_path
-        .strip_prefix(r"\\?\")
-        .unwrap_or(&display_path);
+    let display_path = display_path.strip_prefix(r"\\?\").unwrap_or(&display_path);
 
     output::heading(&format!("Project scan: {display_path}"));
 
@@ -66,6 +65,9 @@ pub fn run(path: &Path) -> Result<(), String> {
 
     output::heading("Git checks");
     git::inspect(&path, &mut summary);
+
+    files::inspect(&path, &mut summary);
+    ignore::inspect(&path, &mut summary);
 
     summary.print();
 

@@ -7,7 +7,9 @@
 * ver. 0.1.0
 *************************************************/
 
+mod files;
 mod git;
+mod ignore;
 mod output;
 mod scan;
 
