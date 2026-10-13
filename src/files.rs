@@ -48,21 +48,52 @@ fn git_root(path: &Path) -> Result<PathBuf, String> {
     Ok(PathBuf::from(root))
 }
 
+
 fn is_build_artifact(path: &Path) -> bool {
     let components: Vec<String> = path
         .components()
-        .map(|part| part.as_os_str().to_string_lossy().to_ascii_lowercase())
+        .map(|part| {
+            part.as_os_str()
+                .to_string_lossy()
+                .to_ascii_lowercase()
+        })
         .collect();
 
-    // Consider the directory name, not an incidental substring
-    // inside a source filename.
-    components.iter().any(|part| {
-        matches!(
-            part.as_str(),
-            "target" | "node_modules" | "__pycache__" | "bin" | "obj" | ".next" | ".gradle"
-        )
-    })
+    if components.is_empty() {
+        return false;
+    }
+
+    // Rust: src/bin contains legitimate executable source files.
+    if components.windows(2).any(|pair| {
+        pair[0] == "src" && pair[1] == "bin"
+    }) {
+        return false;
+    }
+
+    // Generated directories that should not normally be tracked.
+    const BUILD_DIRS: &[&str] = &[
+        "target",
+        "node_modules",
+        "__pycache__",
+        ".next",
+        ".gradle",
+    ];
+
+    if components.iter().any(|part| BUILD_DIRS.contains(&part.as_str())) {
+        return true;
+    }
+
+    // .NET build output directories, excluding src/bin.
+    if components.iter().any(|part| part == "obj") {
+        return true;
+    }
+
+    // A bin directory immediately under a project root or project
+    // subdirectory is not necessarily generated, so avoid
+    // classifying it as an error without further context.
+    false
 }
+
 
 fn human_size(bytes: u64) -> String {
     if bytes >= 1024 * 1024 {
