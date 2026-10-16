@@ -13,7 +13,6 @@ use std::{
     process::Command,
 };
 
-const LARGE_FILE_LIMIT: u64 = 10 * 1024 * 1024;
 const MAX_WARNINGS: usize = 20;
 
 fn git_output(root: &Path, args: &[&str]) -> Result<Vec<u8>, String> {

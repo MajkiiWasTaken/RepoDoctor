@@ -40,7 +40,7 @@ impl Default for ReleaseConfig {
     fn default() -> Self {
         Self {
             require_license: false,
-            warn_existing_tag: true,
+            warn_existing_tag: false,
         }
     }
 }

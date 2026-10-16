@@ -1,6 +1,9 @@
-/target
+/target/
 
-# RepoDoctor diagnostic reports
+# Diagnostic reports
 /scan.json
 /release.txt
 /ci-report.json
+
+# Temporary files
+*.tmp

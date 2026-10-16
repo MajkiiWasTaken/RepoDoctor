@@ -173,30 +173,52 @@ fn version_checks(
         Ok(Some(version)) => {
             summary.ok(&format!("Project version: {version}"));
 
-            if git_available {
-                let tag = format!("v{version}");
+            if !git_available {
+                return;
+            }
 
-                match git(path, &["tag", "--list", &tag]) {
-                    Ok(tags) if tags.lines().any(|line| line == tag) => {
-                        if warn_existing_tag {
-                            summary.warn(&format!("Version tag {tag} already exists"));
-                        } else {
-                            summary.ok(&format!("Version tag {tag} already exists"));
-                        }
+            let tag = format!("v{version}");
+            let tag_ref = format!("refs/tags/{tag}");
+
+            let result = Command::new("git")
+                .arg("-C")
+                .arg(path)
+                .args(["show-ref", "--verify", "--quiet", &tag_ref])
+                .output();
+
+            match result {
+                Ok(result) if result.status.success() => {
+                    if warn_existing_tag {
+                        summary.warn(&format!("Version tag {tag} already exists"));
+                    } else {
+                        summary.ok(&format!("Version tag {tag} already exists"));
                     }
-                    Ok(_) => {
-                        summary.ok(&format!("Tag {tag} is available"));
-                    }
-                    Err(err) => {
-                        summary.error(&format!("Cannot check version tag: {err}"));
-                    }
+                }
+
+                Ok(result) if result.status.code() == Some(1) => {
+                    summary.ok(&format!("Tag {tag} is available"));
+                }
+
+                Ok(result) => {
+                    summary.error(&format!(
+                        "Cannot verify tag {tag}: {}",
+                        String::from_utf8_lossy(&result.stderr).trim()
+                    ));
+                }
+
+                Err(error) => {
+                    summary.error(&format!("Cannot execute Git: {error}"));
                 }
             }
         }
+
         Ok(None) => {
             summary.warn("No project version detected in the selected directory");
         }
-        Err(err) => summary.error(&err),
+
+        Err(error) => {
+            summary.error(&error);
+        }
     }
 }
 
