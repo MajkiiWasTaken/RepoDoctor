@@ -7,18 +7,18 @@
 * ver. 0.1.0
 *************************************************/
 
+mod config;
 mod files;
 mod git;
 mod output;
 mod projects;
 mod release;
-mod scan;
-mod config;
 mod report;
+mod scan;
 
 use clap::{Parser, Subcommand};
-use std::{path::PathBuf, process::ExitCode};
 use report::ReportFormat;
+use std::{path::PathBuf, process::ExitCode};
 
 #[derive(Parser)]
 #[command(
@@ -31,7 +31,6 @@ struct Cli {
     #[command(subcommand)]
     command: Commands,
 }
-
 
 #[derive(Subcommand)]
 enum Commands {
@@ -81,21 +80,16 @@ enum Commands {
     },
 }
 
-
 fn run() -> Result<(), String> {
     let cli = Cli::parse();
     output::banner();
-    
+
     match cli.command {
         Commands::Scan {
             path,
             export,
             format,
-        } => scan::run(
-            &path,
-            export.as_deref(),
-            format,
-        ),
+        } => scan::run(&path, export.as_deref(), format),
 
         Commands::Git { path } => git::run(&path),
 
@@ -105,13 +99,7 @@ fn run() -> Result<(), String> {
             ci,
             export,
             format,
-        } => release::run(
-            &path,
-            strict,
-            ci,
-            export.as_deref(),
-            format,
-        ),
+        } => release::run(&path, strict, ci, export.as_deref(), format),
     }
 }
 

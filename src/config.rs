@@ -4,13 +4,13 @@
 *
 * Project-specific RepoDoctor configuration.
 *
-* ver. 0.5.0
+* ver. 0.6.0
 *************************************************/
 
 use serde::Deserialize;
 use std::{fs, path::Path};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default, Deserialize)]
 #[serde(default)]
 pub struct Config {
     pub files: FileConfig,
@@ -23,7 +23,7 @@ pub struct FileConfig {
     pub large_file_mb: u64,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default, Deserialize)]
 #[serde(default)]
 pub struct ReleaseConfig {
     pub require_license: bool,
@@ -33,24 +33,6 @@ pub struct ReleaseConfig {
 impl Default for FileConfig {
     fn default() -> Self {
         Self { large_file_mb: 10 }
-    }
-}
-
-impl Default for ReleaseConfig {
-    fn default() -> Self {
-        Self {
-            require_license: false,
-            warn_existing_tag: false,
-        }
-    }
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            files: FileConfig::default(),
-            release: ReleaseConfig::default(),
-        }
     }
 }
 

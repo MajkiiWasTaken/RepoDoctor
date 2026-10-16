@@ -25,10 +25,6 @@ fn git(path: &Path, args: &[&str]) -> Result<String, String> {
     Ok(String::from_utf8_lossy(&result.stdout).trim().to_string())
 }
 
-pub fn is_repository(path: &Path) -> bool {
-    git(path, &["rev-parse", "--show-toplevel"]).is_ok()
-}
-
 pub fn inspect(path: &Path, summary: &mut Summary) {
     let root = match git(path, &["rev-parse", "--show-toplevel"]) {
         Ok(root) => {
