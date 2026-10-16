@@ -8,6 +8,10 @@
 *************************************************/
 
 use crate::output::{self, Summary};
+use crate::{
+    config::Config,
+    report::{self, ReportFormat},
+};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -159,7 +163,12 @@ fn git_checks(path: &Path, summary: &mut Summary) -> bool {
     true
 }
 
-fn version_checks(path: &Path, git_available: bool, summary: &mut Summary) {
+fn version_checks(
+    path: &Path,
+    git_available: bool,
+    summary: &mut Summary,
+    warn_existing_tag: bool,
+) {
     match project_version(path) {
         Ok(Some(version)) => {
             summary.ok(&format!("Project version: {version}"));
@@ -169,7 +178,11 @@ fn version_checks(path: &Path, git_available: bool, summary: &mut Summary) {
 
                 match git(path, &["tag", "--list", &tag]) {
                     Ok(tags) if tags.lines().any(|line| line == tag) => {
-                        summary.warn(&format!("Version tag {tag} already exists"));
+                        if warn_existing_tag {
+                            summary.warn(&format!("Version tag {tag} already exists"));
+                        } else {
+                            summary.ok(&format!("Version tag {tag} already exists"));
+                        }
                     }
                     Ok(_) => {
                         summary.ok(&format!("Tag {tag} is available"));
@@ -187,7 +200,13 @@ fn version_checks(path: &Path, git_available: bool, summary: &mut Summary) {
     }
 }
 
-pub fn run(path: &Path, strict: bool) -> Result<(), String> {
+pub fn run(
+    path: &Path,
+    strict: bool,
+    ci: bool,
+    export: Option<&Path>,
+    format: ReportFormat,
+) -> Result<(), String> {
     if !path.is_dir() {
         return Err(format!("Directory does not exist: {}", path.display()));
     }
@@ -195,6 +214,8 @@ pub fn run(path: &Path, strict: bool) -> Result<(), String> {
     let path: PathBuf = path
         .canonicalize()
         .map_err(|e| format!("Cannot resolve directory: {e}"))?;
+
+    let config = Config::load(&path)?;
 
     let display_path = path.to_string_lossy();
     let display_path = display_path.strip_prefix(r"\\?\").unwrap_or(&display_path);
@@ -206,7 +227,13 @@ pub fn run(path: &Path, strict: bool) -> Result<(), String> {
     let git_available = git_checks(&path, &mut summary);
 
     output::heading("Version checks");
-    version_checks(&path, git_available, &mut summary);
+
+    version_checks(
+        &path,
+        git_available,
+        &mut summary,
+        config.release.warn_existing_tag,
+    );
 
     output::heading("Documentation checks");
 
@@ -218,17 +245,28 @@ pub fn run(path: &Path, strict: bool) -> Result<(), String> {
 
     if has_license(&path) {
         summary.ok("License file found");
+    } else if config.release.require_license {
+        summary.error("Required LICENSE file missing");
     } else {
         summary.warn("License file missing");
     }
 
     summary.print();
 
+    // CI mode automatically enables strict checking.
+    let effective_strict = strict || ci;
+    let success = summary.successful(effective_strict);
+
+    // Always generate the report, even when validation fails.
+    if let Some(destination) = export {
+        report::write(destination, format, "release", &path, &summary, success)?;
+    }
+
     if summary.errors > 0 {
         return Err(format!("Release blocked: {} error(s)", summary.errors));
     }
 
-    if strict && summary.warnings > 0 {
+    if effective_strict && summary.warnings > 0 {
         return Err(format!(
             "Strict release check failed: {} warning(s)",
             summary.warnings

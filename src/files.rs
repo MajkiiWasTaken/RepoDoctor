@@ -95,7 +95,8 @@ fn human_size(bytes: u64) -> String {
     }
 }
 
-pub fn inspect(path: &Path, summary: &mut Summary) {
+pub fn inspect(path: &Path, summary: &mut Summary, large_file_mb: u64) {
+    let large_file_limit = large_file_mb * 1024 * 1024;
     output::heading("File checks");
 
     let root = match git_root(path) {
@@ -145,7 +146,7 @@ pub fn inspect(path: &Path, summary: &mut Summary) {
         }
 
         if let Ok(metadata) = absolute.metadata() {
-            if metadata.is_file() && metadata.len() > LARGE_FILE_LIMIT {
+            if metadata.is_file() && metadata.len() > large_file_limit {
                 large += 1;
 
                 if large <= MAX_WARNINGS {
@@ -164,7 +165,7 @@ pub fn inspect(path: &Path, summary: &mut Summary) {
     }
 
     if large == 0 {
-        summary.ok("No tracked files exceed 10 MB");
+        summary.ok(&format!("No tracked files exceed {large_file_mb} MB"));
     }
 
     if artifacts > MAX_WARNINGS {

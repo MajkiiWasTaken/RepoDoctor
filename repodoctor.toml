@@ -1,0 +1,8 @@
+# RepoDoctor project configuration
+
+[files]
+large_file_mb = 20
+
+[release]
+require_license = false
+warn_existing_tag = false

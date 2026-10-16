@@ -7,14 +7,17 @@
 * ver. 0.1.0
 *************************************************/
 
+mod config;
 mod files;
 mod git;
 mod output;
 mod projects;
 mod release;
+mod report;
 mod scan;
 
 use clap::{Parser, Subcommand};
+use report::ReportFormat;
 use std::{path::PathBuf, process::ExitCode};
 
 #[derive(Parser)]
@@ -33,14 +36,22 @@ struct Cli {
 enum Commands {
     /// Inspect a development project
     Scan {
-        /// Project directory (defaults to current directory)
+        /// Project directory
         #[arg(default_value = ".")]
         path: PathBuf,
+
+        /// Save diagnostic report
+        #[arg(long)]
+        export: Option<PathBuf>,
+
+        /// Report format: text or json
+        #[arg(long, value_enum, default_value_t = ReportFormat::Text)]
+        format: ReportFormat,
     },
 
     /// Inspect Git repository status
     Git {
-        /// Repository directory (defaults to current directory)
+        /// Repository directory
         #[arg(default_value = ".")]
         path: PathBuf,
     },
@@ -54,6 +65,18 @@ enum Commands {
         /// Treat warnings as release blockers
         #[arg(long)]
         strict: bool,
+
+        /// CI mode (enables strict checks)
+        #[arg(long)]
+        ci: bool,
+
+        /// Save diagnostic report
+        #[arg(long)]
+        export: Option<PathBuf>,
+
+        /// Report format: text or json
+        #[arg(long, value_enum, default_value_t = ReportFormat::Text)]
+        format: ReportFormat,
     },
 }
 
@@ -62,9 +85,21 @@ fn run() -> Result<(), String> {
     output::banner();
 
     match cli.command {
-        Commands::Scan { path } => scan::run(&path),
+        Commands::Scan {
+            path,
+            export,
+            format,
+        } => scan::run(&path, export.as_deref(), format),
+
         Commands::Git { path } => git::run(&path),
-        Commands::Release { path, strict } => release::run(&path, strict),
+
+        Commands::Release {
+            path,
+            strict,
+            ci,
+            export,
+            format,
+        } => release::run(&path, strict, ci, export.as_deref(), format),
     }
 }
 
