@@ -1,1 +1,6 @@
 /target
+
+# RepoDoctor diagnostic reports
+/scan.json
+/release.txt
+/ci-report.json

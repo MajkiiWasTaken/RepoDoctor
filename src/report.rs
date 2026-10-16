@@ -39,7 +39,7 @@ pub fn write(
         tool: "RepoDoctor",
         version: env!("CARGO_PKG_VERSION"),
         command,
-        project: project.display().to_string(),
+        project: display_path(project),
         success,
         summary,
     };
@@ -53,7 +53,7 @@ pub fn write(
                 "RepoDoctor v{}\nCommand: {}\nProject: {}\nResult: {}\n\n",
                 env!("CARGO_PKG_VERSION"),
                 command,
-                project.display(),
+                display_path(project),
                 if success { "PASS" } else { "FAIL" }
             );
 
@@ -91,4 +91,10 @@ pub fn write(
 
     println!("[INFO] Report saved: {}", path.display());
     Ok(())
+}
+
+fn display_path(path: &Path) -> String {
+    let value = path.to_string_lossy();
+
+    value.strip_prefix(r"\\?\").unwrap_or(&value).to_string()
 }
